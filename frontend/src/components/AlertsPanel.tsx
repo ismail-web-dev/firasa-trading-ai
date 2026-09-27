@@ -20,6 +20,8 @@ import {
   Activity,
   Layers,
   ArrowUpRight,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 
 interface AlertsPanelProps {
@@ -47,6 +49,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
   const [conditionType, setConditionType] = useState<string>("PRICE_ABOVE");
   const [thresholdValue, setThresholdValue] = useState<string>("185.0");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSeedingSample, setIsSeedingSample] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isSMACross =
@@ -64,6 +67,40 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
       setThresholdValue("185.0");
     } else {
       setThresholdValue("0.0");
+    }
+  };
+
+  const handleLoadSampleAlerts = async () => {
+    try {
+      setIsSeedingSample(true);
+      setErrorMsg(null);
+      const sampleAlerts: AlertCreate[] = [
+        {
+          ticker: "AAPL",
+          condition_type: "PRICE_ABOVE",
+          threshold_value: 100.0,
+        },
+        {
+          ticker: "NVDA",
+          condition_type: "RSI_ABOVE",
+          threshold_value: 70.0,
+        },
+        {
+          ticker: "MSFT",
+          condition_type: "SMA20_ABOVE_SMA50",
+          threshold_value: 0.0,
+        },
+      ];
+
+      for (const a of sampleAlerts) {
+        await onCreateAlert(a);
+      }
+      // Re-evaluate immediately to trigger signals banner for demo
+      await onEvaluateAlerts();
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to load sample alert rules.");
+    } finally {
+      setIsSeedingSample(false);
     }
   };
 
@@ -107,6 +144,46 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 space-y-6">
+      {/* Alerts Header Bar with Sample Rules Seeder */}
+      <div className="bg-terminal-panel border border-terminal-border rounded-lg p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 font-mono">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400">
+            <Bell className="w-4 h-4" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+              <span>TECHNICAL ALERT ENGINE</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400">
+                PHASE 7
+              </span>
+            </h1>
+            <p className="text-[11px] text-terminal-muted">
+              Deterministic Price & Indicator Rule Evaluator (SQLite Persistence)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleLoadSampleAlerts}
+            disabled={isSeedingSample || loading}
+            className="flex items-center gap-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 rounded font-mono font-semibold transition-all whitespace-nowrap shadow-sm"
+          >
+            <Zap className={`w-3.5 h-3.5 text-amber-400 ${isSeedingSample ? "animate-spin" : ""}`} />
+            <span>{isSeedingSample ? "Seeding 3 Rules..." : "⚡ Load Sample Alerts"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={onEvaluateAlerts}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded transition-colors whitespace-nowrap"
+          >
+            <Activity className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Re-Evaluate All</span>
+          </button>
+        </div>
+      </div>
       {/* 3-Card Alert Telemetry Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 font-mono">
         <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between">
@@ -240,27 +317,38 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
         onSubmit={handleCreateSubmit}
         className="bg-terminal-panel border border-terminal-border rounded-lg p-4 space-y-3 font-mono"
       >
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase text-slate-300 flex items-center gap-2">
-            <Plus className="w-3.5 h-3.5 text-sky-400" />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs font-semibold uppercase text-slate-300 flex items-center gap-2 whitespace-nowrap">
+            <Plus className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>CREATE TECHNICAL ALERT RULE</span>
           </span>
 
-          <button
-            type="button"
-            onClick={onEvaluateAlerts}
-            disabled={loading}
-            className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 bg-slate-900 border border-slate-700 px-2.5 py-1 rounded transition-colors"
-          >
-            <Activity className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-            <span>Re-Evaluate All</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleLoadSampleAlerts}
+              disabled={isSeedingSample || loading}
+              className="flex items-center gap-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-2.5 py-1 rounded transition-colors whitespace-nowrap font-semibold"
+            >
+              <Zap className={`w-3.5 h-3.5 text-amber-400 ${isSeedingSample ? "animate-spin" : ""}`} />
+              <span>⚡ Load Sample Alerts</span>
+            </button>
+            <button
+              type="button"
+              onClick={onEvaluateAlerts}
+              disabled={loading}
+              className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 bg-slate-900 border border-slate-700 px-2.5 py-1 rounded transition-colors whitespace-nowrap"
+            >
+              <Activity className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <span>Re-Evaluate All</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           {/* Ticker Input */}
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               TICKER SYMBOL
             </label>
             <input
@@ -270,20 +358,20 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
               disabled={isSubmitting}
               maxLength={10}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 uppercase"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 uppercase min-w-0"
             />
           </div>
 
           {/* Condition Select */}
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               CONDITION CRITERIA
             </label>
             <select
               value={conditionType}
               onChange={(e) => handleConditionChange(e.target.value)}
               disabled={isSubmitting}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200 focus:outline-none focus:border-sky-500 min-w-0"
             >
               <option value="PRICE_ABOVE">Price Above ($)</option>
               <option value="PRICE_BELOW">Price Below ($)</option>
@@ -295,8 +383,8 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
           </div>
 
           {/* Threshold Input */}
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               THRESHOLD VALUE
             </label>
             <input
@@ -306,33 +394,33 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
               placeholder={isSMACross ? "Auto (Crossover)" : "e.g. 185.0"}
               value={isSMACross ? "" : thresholdValue}
               onChange={(e) => setThresholdValue(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 disabled:bg-slate-950 disabled:opacity-50"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 disabled:bg-slate-950 disabled:opacity-50 min-w-0"
             />
           </div>
 
           {/* Preset Buttons & Submit */}
-          <div className="flex flex-col justify-end">
+          <div className="flex flex-col justify-end min-w-0">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white rounded py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white rounded py-1.5 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap min-w-0"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5 shrink-0" />
               <span>{isSubmitting ? "Creating..." : "+ Arm Alert Rule"}</span>
             </button>
           </div>
         </div>
 
         {/* Quick Presets Pills */}
-        <div className="flex items-center gap-2 pt-1 text-[11px] text-terminal-muted">
-          <span>Presets:</span>
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-terminal-muted">
+          <span className="whitespace-nowrap">Presets:</span>
           <button
             type="button"
             onClick={() => {
               setConditionType("RSI_ABOVE");
               setThresholdValue("70.0");
             }}
-            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:text-white"
+            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:text-white whitespace-nowrap"
           >
             RSI 70 Overbought
           </button>
@@ -342,7 +430,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
               setConditionType("RSI_BELOW");
               setThresholdValue("30.0");
             }}
-            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:text-white"
+            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:text-white whitespace-nowrap"
           >
             RSI 30 Oversold
           </button>
@@ -352,7 +440,7 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
               setConditionType("SMA20_ABOVE_SMA50");
               setThresholdValue("0.0");
             }}
-            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:text-white"
+            className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 hover:text-white whitespace-nowrap"
           >
             Golden Cross (SMA20 &gt; 50)
           </button>
@@ -395,7 +483,16 @@ export const AlertsPanel: React.FC<AlertsPanelProps> = ({
               {alerts.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-slate-500">
-                    No alert rules armed. Set up your first price or indicator rule above.
+                    <p className="mb-3 text-slate-400">No alert rules armed. Set up your first price or indicator rule above.</p>
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleAlerts}
+                      disabled={isSeedingSample || loading}
+                      className="inline-flex items-center gap-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3.5 py-1.5 rounded font-mono font-semibold transition-all shadow-sm"
+                    >
+                      <Zap className={`w-3.5 h-3.5 text-amber-400 ${isSeedingSample ? "animate-spin" : ""}`} />
+                      <span>{isSeedingSample ? "Seeding 3 Rules..." : "⚡ Load Sample Alerts"}</span>
+                    </button>
                   </td>
                 </tr>
               ) : (

@@ -126,6 +126,18 @@ export const AIIntelligencePanel: React.FC<AIIntelligencePanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 space-y-6 text-terminal-text font-sans">
+      {/* Zero-LLM-Math Verified Institutional Guardrail Banner */}
+      <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+        <div className="flex items-center gap-2.5 text-emerald-400 font-bold tracking-wide">
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+          <span>ZERO-LLM-MATH VERIFIED: Deterministic Pandas/TypeScript Telemetry &rarr; Structured AI Synthesis</span>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Strict Server-Side Secret Isolation &bull; OpenRouter / Fallback Ready</span>
+        </div>
+      </div>
+
       {/* Top Banner: Sub-tabs & Module Status */}
       <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -148,41 +160,41 @@ export const AIIntelligencePanel: React.FC<AIIntelligencePanelProps> = ({
         </div>
 
         {/* Sub-Tabs Switcher */}
-        <div className="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/80 p-1 rounded-lg border border-slate-800 text-xs font-mono">
           <button
             onClick={() => setSubTab("analysis")}
-            className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all shrink-0 whitespace-nowrap ${
               subTab === "analysis"
                 ? "bg-sky-500/20 text-sky-300 border border-sky-500/40 font-semibold"
                 : "text-slate-400 hover:text-slate-200 border border-transparent"
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-            <span>Market Analysis (P8)</span>
+            <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <span>Market Analysis Engine</span>
           </button>
 
           <button
             onClick={() => setSubTab("audit")}
-            className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all shrink-0 whitespace-nowrap ${
               subTab === "audit"
                 ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold"
                 : "text-slate-400 hover:text-slate-200 border border-transparent"
             }`}
           >
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-            <span>Risk Auditor (P9)</span>
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>Portfolio Risk Auditor</span>
           </button>
 
           <button
             onClick={() => setSubTab("scanner")}
-            className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded flex items-center gap-1.5 transition-all shrink-0 whitespace-nowrap ${
               subTab === "scanner"
                 ? "bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold"
                 : "text-slate-400 hover:text-slate-200 border border-transparent"
             }`}
           >
-            <Radar className="w-3.5 h-3.5 text-purple-400" />
-            <span>Opportunity Scanner (P10)</span>
+            <Radar className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+            <span>Opportunity Scanner</span>
           </button>
         </div>
       </div>
@@ -218,7 +230,7 @@ export const AIIntelligencePanel: React.FC<AIIntelligencePanelProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <div className="relative">
                 <input
                   type="text"
@@ -232,7 +244,7 @@ export const AIIntelligencePanel: React.FC<AIIntelligencePanelProps> = ({
               <button
                 onClick={() => handleRunAnalysis(selectedTicker)}
                 disabled={loadingAnalysis || !selectedTicker.trim()}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-mono text-xs font-semibold transition-colors shadow-sm"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-mono text-xs font-semibold transition-colors shadow-sm shrink-0 whitespace-nowrap"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loadingAnalysis ? "animate-spin" : ""}`} />
                 <span>{loadingAnalysis ? "Synthesizing..." : "Run AI Analysis"}</span>
@@ -457,7 +469,7 @@ export const AIIntelligencePanel: React.FC<AIIntelligencePanelProps> = ({
             <button
               onClick={handleRunAudit}
               disabled={loadingAudit}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-mono text-xs font-bold transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-mono text-xs font-bold transition-colors shadow-sm shrink-0 whitespace-nowrap"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingAudit ? "animate-spin" : ""}`} />
               <span>{loadingAudit ? "Auditing Portfolio..." : "Run Portfolio Risk Audit"}</span>
@@ -638,7 +650,7 @@ export const AIIntelligencePanel: React.FC<AIIntelligencePanelProps> = ({
             <button
               onClick={handleRunScan}
               disabled={loadingScan}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-mono text-xs font-bold transition-colors shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-mono text-xs font-bold transition-colors shadow-sm shrink-0 whitespace-nowrap"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loadingScan ? "animate-spin" : ""}`} />
               <span>{loadingScan ? "Scanning Universe..." : "Scan Watchlist Universe"}</span>

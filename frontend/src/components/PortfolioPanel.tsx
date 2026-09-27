@@ -20,6 +20,7 @@ import {
   Save,
   X,
   ShieldAlert,
+  Zap,
 } from "lucide-react";
 
 interface PortfolioPanelProps {
@@ -45,10 +46,52 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
   const [avgCost, setAvgCost] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSeedingDemo, setIsSeedingDemo] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isTotalPlPositive = (portfolio?.total_unrealized_pl || 0) >= 0;
   const isDayPlPositive = (portfolio?.total_day_change_dollar || 0) >= 0;
+
+  const handleLoadDemoPortfolio = async () => {
+    try {
+      setIsSeedingDemo(true);
+      setErrorMsg(null);
+      const demoHoldings: HoldingCreateUpdate[] = [
+        {
+          ticker: "NVDA",
+          shares: 25,
+          avg_cost_basis: 98.50,
+          notes: "Core AI semiconductor overweight — concentration test",
+        },
+        {
+          ticker: "AAPL",
+          shares: 15,
+          avg_cost_basis: 182.00,
+          notes: "Large-cap ecosystem anchor",
+        },
+        {
+          ticker: "MSFT",
+          shares: 8,
+          avg_cost_basis: 405.00,
+          notes: "Enterprise cloud & AI infrastructure",
+        },
+        {
+          ticker: "JPM",
+          shares: 12,
+          avg_cost_basis: 195.00,
+          notes: "Financials sector hedge",
+        },
+      ];
+
+      for (const h of demoHoldings) {
+        await onSaveHolding(h);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to load demo portfolio.");
+    } finally {
+      setIsSeedingDemo(false);
+    }
+  };
 
   const handleStartEdit = (h: HoldingValuation) => {
     setEditingId(h.id);
@@ -118,67 +161,97 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-4 md:p-6 space-y-6">
+      {/* Portfolio Header Bar with Demo Seeder */}
+      <div className="bg-terminal-panel border border-terminal-border rounded-lg p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 font-mono">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400">
+            <Briefcase className="w-4 h-4" />
+          </div>
+          <div>
+            <h1 className="text-sm font-bold text-white tracking-wide flex items-center gap-2">
+              <span>PORTFOLIO & ASSET LEDGER</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400">
+                PHASE 6
+              </span>
+            </h1>
+            <p className="text-[11px] text-terminal-muted">
+              Deterministic Real-Time Valuation & Weight Concentration Analysis
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleLoadDemoPortfolio}
+          disabled={isSeedingDemo || loading}
+          className="flex items-center gap-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3 py-1.5 rounded font-mono font-semibold transition-all whitespace-nowrap shadow-sm"
+        >
+          <Zap className={`w-3.5 h-3.5 text-amber-400 ${isSeedingDemo ? "animate-spin" : ""}`} />
+          <span>{isSeedingDemo ? "Seeding 4 Positions..." : "⚡ Load Demo Portfolio"}</span>
+        </button>
+      </div>
+
       {/* 4-Card Portfolio Telemetry KPI Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
         {/* Total Market Value */}
-        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between">
+        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between text-terminal-muted text-xs">
-            <span className="flex items-center gap-1.5">
-              <Briefcase className="w-4 h-4 text-sky-400" />
-              <span>TOTAL PORTFOLIO VALUE</span>
+            <span className="flex items-center gap-1.5 truncate">
+              <Briefcase className="w-4 h-4 text-sky-400 shrink-0" />
+              <span className="truncate">TOTAL PORTFOLIO VALUE</span>
             </span>
-            <span className="bg-slate-800 text-sky-400 px-2 py-0.5 rounded text-[10px]">
+            <span className="bg-slate-800 text-sky-400 px-2 py-0.5 rounded text-[10px] shrink-0">
               {portfolio?.holdings_count || 0} ASSETS
             </span>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold text-white tracking-tight">
+          <div className="mt-3 min-w-0">
+            <div className="text-xl sm:text-2xl font-bold text-white tracking-tight truncate">
               ${(portfolio?.total_market_value || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </div>
-            <div className="text-[11px] text-terminal-muted mt-1">
+            <div className="text-[11px] text-terminal-muted mt-1 truncate">
               Mark-to-market aggregate
             </div>
           </div>
         </div>
 
         {/* Total Cost Basis */}
-        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between">
+        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between text-terminal-muted text-xs">
-            <span className="flex items-center gap-1.5">
-              <DollarSign className="w-4 h-4 text-purple-400" />
-              <span>TOTAL COST BASIS</span>
+            <span className="flex items-center gap-1.5 truncate">
+              <DollarSign className="w-4 h-4 text-purple-400 shrink-0" />
+              <span className="truncate">TOTAL COST BASIS</span>
             </span>
-            <span className="text-[10px] text-terminal-muted">INVESTED</span>
+            <span className="text-[10px] text-terminal-muted shrink-0">INVESTED</span>
           </div>
-          <div className="mt-3">
-            <div className="text-2xl font-bold text-slate-200 tracking-tight">
+          <div className="mt-3 min-w-0">
+            <div className="text-xl sm:text-2xl font-bold text-slate-200 tracking-tight truncate">
               ${(portfolio?.total_cost_basis || 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </div>
-            <div className="text-[11px] text-terminal-muted mt-1">
+            <div className="text-[11px] text-terminal-muted mt-1 truncate">
               Net capital allocated
             </div>
           </div>
         </div>
 
         {/* Unrealized P/L */}
-        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between">
+        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between text-terminal-muted text-xs">
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 truncate">
               {isTotalPlPositive ? (
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
+                <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
               ) : (
-                <TrendingDown className="w-4 h-4 text-rose-400" />
+                <TrendingDown className="w-4 h-4 text-rose-400 shrink-0" />
               )}
-              <span>UNREALIZED P/L</span>
+              <span className="truncate">UNREALIZED P/L</span>
             </span>
             <span
-              className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ${
                 isTotalPlPositive
                   ? "bg-emerald-500/20 text-emerald-400"
                   : "bg-rose-500/20 text-rose-400"
@@ -188,9 +261,9 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
               {(portfolio?.total_unrealized_pl_percent || 0).toFixed(2)}%
             </span>
           </div>
-          <div className="mt-3">
+          <div className="mt-3 min-w-0">
             <div
-              className={`text-2xl font-bold tracking-tight ${
+              className={`text-xl sm:text-2xl font-bold tracking-tight truncate ${
                 isTotalPlPositive ? "text-emerald-400" : "text-rose-400"
               }`}
             >
@@ -200,29 +273,29 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
                 maximumFractionDigits: 2,
               })}
             </div>
-            <div className="text-[11px] text-terminal-muted mt-1">
+            <div className="text-[11px] text-terminal-muted mt-1 truncate">
               Cumulative open return
             </div>
           </div>
         </div>
 
         {/* Day Change & Concentration Warning */}
-        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between">
+        <div className="bg-terminal-panel border border-terminal-border rounded-lg p-4 flex flex-col justify-between min-w-0">
           <div className="flex items-center justify-between text-terminal-muted text-xs">
-            <span className="flex items-center gap-1.5">
-              <PieChart className="w-4 h-4 text-amber-400" />
-              <span>DAY P/L & CONCENTRATION</span>
+            <span className="flex items-center gap-1.5 truncate">
+              <PieChart className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="truncate">DAY P/L & CONCENTRATION</span>
             </span>
             {portfolio?.concentration_warning && (
-              <span className="flex items-center gap-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold">
+              <span className="flex items-center gap-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0">
                 <ShieldAlert className="w-3 h-3" />
                 <span>&gt;25% CONC.</span>
               </span>
             )}
           </div>
-          <div className="mt-3">
+          <div className="mt-3 min-w-0">
             <div
-              className={`text-xl font-bold tracking-tight ${
+              className={`text-lg sm:text-xl font-bold tracking-tight truncate ${
                 isDayPlPositive ? "text-emerald-400" : "text-rose-400"
               }`}
             >
@@ -340,8 +413,8 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs">
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               TICKER SYMBOL
             </label>
             <input
@@ -351,12 +424,12 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
               onChange={(e) => setTicker(e.target.value.toUpperCase())}
               disabled={isSubmitting}
               maxLength={10}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 uppercase"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 uppercase min-w-0"
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               SHARES QUANTITY
             </label>
             <input
@@ -367,12 +440,12 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
               value={shares}
               onChange={(e) => setShares(e.target.value)}
               disabled={isSubmitting}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 min-w-0"
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               AVG COST BASIS ($)
             </label>
             <input
@@ -383,12 +456,12 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
               value={avgCost}
               onChange={(e) => setAvgCost(e.target.value)}
               disabled={isSubmitting}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 min-w-0"
             />
           </div>
 
-          <div>
-            <label className="block text-[11px] text-terminal-muted mb-1">
+          <div className="min-w-0">
+            <label className="block text-[11px] text-terminal-muted mb-1 truncate">
               RESEARCH / STRATEGY NOTES
             </label>
             <input
@@ -398,7 +471,7 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
               onChange={(e) => setNotes(e.target.value)}
               disabled={isSubmitting}
               maxLength={500}
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500"
+              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-1.5 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-500 min-w-0"
             />
           </div>
         </div>
@@ -410,11 +483,21 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 pt-1 font-mono">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 font-mono">
+          <button
+            type="button"
+            onClick={handleLoadDemoPortfolio}
+            disabled={isSeedingDemo || loading}
+            className="text-xs text-amber-300 hover:text-amber-200 flex items-center gap-1.5 font-mono px-2.5 py-1.5 rounded bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
+          >
+            <Zap className={`w-3.5 h-3.5 text-amber-400 ${isSeedingDemo ? "animate-spin" : ""}`} />
+            <span>⚡ Load Demo Portfolio</span>
+          </button>
+
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white px-4 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white px-4 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition-colors shrink-0"
           >
             <Save className="w-3.5 h-3.5" />
             <span>
@@ -460,7 +543,16 @@ export const PortfolioPanel: React.FC<PortfolioPanelProps> = ({
               {holdings.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="py-8 text-center text-slate-500">
-                    No portfolio positions recorded yet. Add your first holding above.
+                    <p className="mb-3 text-slate-400">No portfolio positions recorded yet. Add your first holding above.</p>
+                    <button
+                      type="button"
+                      onClick={handleLoadDemoPortfolio}
+                      disabled={isSeedingDemo || loading}
+                      className="inline-flex items-center gap-1.5 text-xs text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 px-3.5 py-1.5 rounded font-mono font-semibold transition-all shadow-sm"
+                    >
+                      <Zap className={`w-3.5 h-3.5 text-amber-400 ${isSeedingDemo ? "animate-spin" : ""}`} />
+                      <span>{isSeedingDemo ? "Loading Institutional Demo..." : "⚡ Load Demo Portfolio"}</span>
+                    </button>
                   </td>
                 </tr>
               ) : (
