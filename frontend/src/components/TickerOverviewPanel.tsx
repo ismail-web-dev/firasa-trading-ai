@@ -29,6 +29,7 @@ interface TickerOverviewPanelProps {
   onRefresh: () => void;
   loading: boolean;
   onOpenAIAnalysis?: (ticker: string) => void;
+  tickDirection?: "up" | "down" | "flat";
 }
 
 export const TickerOverviewPanel: React.FC<TickerOverviewPanelProps> = ({
@@ -41,7 +42,9 @@ export const TickerOverviewPanel: React.FC<TickerOverviewPanelProps> = ({
   onRefresh,
   loading,
   onOpenAIAnalysis,
+  tickDirection = "flat",
 }) => {
+
 
   const [showRecentBars, setShowRecentBars] = useState<boolean>(false);
   const isPositive = quote ? quote.change >= 0 : true;
@@ -73,7 +76,15 @@ export const TickerOverviewPanel: React.FC<TickerOverviewPanelProps> = ({
         {/* Price & Actions */}
         <div className="flex items-center gap-5">
           <div className="text-left sm:text-right font-mono">
-            <div className="text-2xl font-bold text-white tracking-tight">
+            <div
+              className={`text-2xl font-bold tracking-tight transition-all duration-500 px-1.5 py-0.5 rounded inline-block ${
+                tickDirection === "up"
+                  ? "text-emerald-400 bg-emerald-500/20 scale-[1.02]"
+                  : tickDirection === "down"
+                  ? "text-rose-400 bg-rose-500/20 scale-[0.98]"
+                  : "text-white"
+              }`}
+            >
               {quote ? `$${quote.price.toFixed(2)}` : "—"}
             </div>
             {quote ? (

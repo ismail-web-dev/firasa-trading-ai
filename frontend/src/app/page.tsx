@@ -64,6 +64,12 @@ export default function TerminalPage() {
   const [loadingPortfolio, setLoadingPortfolio] = useState<boolean>(false);
   const [loadingAlerts, setLoadingAlerts] = useState<boolean>(false);
 
+  // 2-Second Live Terminal Pulse Engine State
+  const [isLivePulse, setIsLivePulse] = useState<boolean>(true);
+  const [tickDirections, setTickDirections] = useState<Record<string, "up" | "down" | "flat">>({});
+  const anchorPricesRef = React.useRef<Record<string, number>>({});
+
+
   // Load Watchlist and System Status
   const loadSystemAndWatchlist = useCallback(async () => {
     try {
@@ -194,6 +200,118 @@ export default function TerminalPage() {
     }
   }, [selectedTicker, days, loadActiveTickerData]);
 
+  // Synchronize anchor prices when real backend quotes arrive
+  useEffect(() => {
+    Object.entries(quotes).forEach(([ticker, q]) => {
+      if (q && !anchorPricesRef.current[ticker]) {
+        anchorPricesRef.current[ticker] = q.price;
+      }
+    });
+  }, [quotes]);
+
+  // 2-Second Live Terminal Pulse Engine
+  useEffect(() => {
+    if (!isLivePulse) return;
+
+    const interval = setInterval(() => {
+      setQuotes((prevQuotes) => {
+        const keys = Object.keys(prevQuotes);
+        if (!keys.length) return prevQuotes;
+
+        const nextQuotes = { ...prevQuotes };
+        const nextDirections: Record<string, "up" | "down" | "flat"> = {};
+
+        keys.forEach((t) => {
+          const q = nextQuotes[t];
+          if (!q) return;
+
+          const anchor = anchorPricesRef.current[t] || q.price;
+          // Fluctuation percentage: 0.03% to 0.18%
+          const pct = (Math.random() * 0.15 + 0.03) / 100;
+          let isUp = Math.random() >= 0.49;
+
+          // Enforce ±1.2% boundary from anchor price
+          const currentDev = (q.price - anchor) / anchor;
+          if (currentDev >= 0.012) {
+            isUp = false;
+          } else if (currentDev <= -0.012) {
+            isUp = true;
+          }
+
+          const rawDelta = q.price * pct * (isUp ? 1 : -1);
+          let newPrice = Number((q.price + rawDelta).toFixed(2));
+          if (newPrice === q.price) {
+            newPrice = Number((q.price + (isUp ? 0.01 : -0.01)).toFixed(2));
+          }
+
+          const dir: "up" | "down" | "flat" =
+            newPrice > q.price ? "up" : newPrice < q.price ? "down" : "flat";
+          nextDirections[t] = dir;
+
+          const prevClose = q.prev_close || q.price;
+          const newChange = Number((newPrice - prevClose).toFixed(2));
+          const newChangePct = prevClose > 0 ? Number(((newChange / prevClose) * 100).toFixed(2)) : 0;
+
+          nextQuotes[t] = {
+            ...q,
+            price: newPrice,
+            change: newChange,
+            change_percent: newChangePct,
+            high: Math.max(q.high, newPrice),
+            low: Math.min(q.low, newPrice),
+          };
+        });
+
+        setTickDirections(nextDirections);
+
+        // Clear highlight flash after 800ms
+        setTimeout(() => {
+          setTickDirections((prev) => {
+            const cleared: Record<string, "up" | "down" | "flat"> = {};
+            Object.keys(prev).forEach((k) => {
+              cleared[k] = "flat";
+            });
+            return cleared;
+          });
+        }, 800);
+
+        return nextQuotes;
+      });
+
+      // Update active quote and the latest bar on the active chart
+      setSelectedTicker((currTicker) => {
+        setQuotes((latestQuotes) => {
+          const updatedActive = latestQuotes[currTicker];
+          if (updatedActive) {
+            setActiveQuote(updatedActive);
+            setActiveBars((prevBars) => {
+              if (!prevBars || !prevBars.bars || !prevBars.bars.length) return prevBars;
+              const lastIdx = prevBars.bars.length - 1;
+              const lastBar = prevBars.bars[lastIdx];
+              const updatedBar = {
+                ...lastBar,
+                close: updatedActive.price,
+                high: Math.max(lastBar.high, updatedActive.price),
+                low: Math.min(lastBar.low, updatedActive.price),
+              };
+              const newBarsList = [...prevBars.bars];
+              newBarsList[lastIdx] = updatedBar;
+              return {
+                ...prevBars,
+                bars: newBarsList,
+              };
+            });
+          }
+          return latestQuotes;
+        });
+        return currTicker;
+      });
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isLivePulse]);
+
+
   // Handler: Add to Watchlist
   const handleAddTicker = async (ticker: string, companyName?: string) => {
     const newItem = await addToWatchlist(ticker, companyName);
@@ -264,6 +382,8 @@ export default function TerminalPage() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         triggeredAlertsCount={alertsData?.triggered_count || 0}
+        isLivePulse={isLivePulse}
+        onToggleLivePulse={() => setIsLivePulse((prev) => !prev)}
         onQuickJumpTicker={(ticker) => {
           setSelectedTicker(ticker);
           setActiveTab("terminal");
@@ -346,6 +466,7 @@ export default function TerminalPage() {
             watchlist={watchlist}
             quotes={quotes}
             selectedTicker={selectedTicker}
+            tickDirections={tickDirections}
             onSelectTicker={(ticker) => setSelectedTicker(ticker)}
             onAddTicker={handleAddTicker}
             onRemoveTicker={handleRemoveTicker}
@@ -359,6 +480,7 @@ export default function TerminalPage() {
             barsData={activeBars}
             indicators={activeIndicators}
             days={days}
+            tickDirection={tickDirections[selectedTicker] || "flat"}
             onDaysChange={(newDays) => setDays(newDays)}
             onRefresh={() => loadActiveTickerData(selectedTicker, days, true)}
             loading={loadingActiveTicker}
@@ -369,6 +491,7 @@ export default function TerminalPage() {
           />
         </div>
       )}
+
 
 
       {/* Disclaimer Footer */}

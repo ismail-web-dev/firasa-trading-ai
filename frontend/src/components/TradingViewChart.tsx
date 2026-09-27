@@ -55,6 +55,10 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
   const macdHistRef = useRef<ISeriesApi<"Histogram"> | null>(null);
 
+  // Track ticker and bars count to distinguish 2s micro-ticks from ticker changes
+  const prevBarsStateRef = useRef<{ ticker: string; count: number }>({ ticker: "", count: 0 });
+
+
   // 1. Initialize Main Chart
   useEffect(() => {
     if (!mainContainerRef.current) return;
@@ -199,6 +203,34 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
   useEffect(() => {
     if (!mainChartRef.current || !candlestickSeriesRef.current || !bars.length) return;
 
+    // Check if this is a live pulse micro-tick on the latest bar of the same ticker
+    const isMicroTick =
+      prevBarsStateRef.current.ticker === ticker &&
+      prevBarsStateRef.current.count === bars.length;
+
+    if (isMicroTick) {
+      const lastBar = bars[bars.length - 1];
+      const isUp = lastBar.close >= lastBar.open;
+      candlestickSeriesRef.current.update({
+        time: lastBar.date as Time,
+        open: lastBar.open,
+        high: lastBar.high,
+        low: lastBar.low,
+        close: lastBar.close,
+      });
+      if (volumeSeriesRef.current && showVolume) {
+        volumeSeriesRef.current.update({
+          time: lastBar.date as Time,
+          value: lastBar.volume,
+          color: isUp ? "#10b98133" : "#f43f5e33",
+        });
+      }
+      return;
+    }
+
+    // Full load / ticker change: sort and set all data
+    prevBarsStateRef.current = { ticker, count: bars.length };
+
     // Filter duplicates and sort ascending
     const sorted = [...bars].sort((a, b) => a.timestamp - b.timestamp);
     const seenDates = new Set<string>();
@@ -251,7 +283,8 @@ export const TradingViewChart: React.FC<TradingViewChartProps> = ({
     }
 
     mainChartRef.current.timeScale().fitContent();
-  }, [bars, indicators, showSMA20, showSMA50, showVolume]);
+  }, [ticker, bars, indicators, showSMA20, showSMA50, showVolume]);
+
 
   // 4. Populate Sub-Chart Series (RSI vs MACD)
   useEffect(() => {

@@ -10,6 +10,7 @@ interface WatchlistSidebarProps {
   onAddTicker: (ticker: string, companyName?: string) => Promise<void>;
   onRemoveTicker: (ticker: string) => Promise<void>;
   loading: boolean;
+  tickDirections?: Record<string, "up" | "down" | "flat">;
 }
 
 export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
@@ -20,7 +21,9 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
   onAddTicker,
   onRemoveTicker,
   loading,
+  tickDirections,
 }) => {
+
   const [filterQuery, setFilterQuery] = useState("");
   const [newTicker, setNewTicker] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -146,6 +149,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             const quote = quotes[item.ticker];
             const isSelected = selectedTicker === item.ticker;
             const isPositive = quote ? quote.change >= 0 : true;
+            const tickDir = tickDirections?.[item.ticker] || "flat";
 
             return (
               <div
@@ -177,12 +181,20 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 {/* Price & Change */}
                 <div className="flex items-center gap-3">
                   <div className="text-right font-mono">
-                    <div className="text-xs text-slate-200">
+                    <div
+                      className={`text-xs font-semibold px-1.5 py-0.5 rounded transition-all duration-500 inline-block ${
+                        tickDir === "up"
+                          ? "text-emerald-400 bg-emerald-500/20"
+                          : tickDir === "down"
+                          ? "text-rose-400 bg-rose-500/20"
+                          : "text-slate-200"
+                      }`}
+                    >
                       {quote ? `$${quote.price.toFixed(2)}` : "—"}
                     </div>
                     {quote ? (
                       <div
-                        className={`text-[10px] flex items-center justify-end gap-0.5 ${
+                        className={`text-[10px] flex items-center justify-end gap-0.5 font-medium ${
                           isPositive ? "text-emerald-400" : "text-rose-400"
                         }`}
                       >
@@ -200,6 +212,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                       <span className="text-[10px] text-slate-500">...</span>
                     )}
                   </div>
+
 
                   {/* Remove Button */}
                   <button

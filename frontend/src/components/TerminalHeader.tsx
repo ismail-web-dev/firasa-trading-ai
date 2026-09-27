@@ -9,6 +9,8 @@ interface TerminalHeaderProps {
   setActiveTab: (tab: string) => void;
   triggeredAlertsCount?: number;
   onQuickJumpTicker?: (ticker: string) => void;
+  isLivePulse?: boolean;
+  onToggleLivePulse?: () => void;
 }
 
 export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
@@ -18,7 +20,10 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
   setActiveTab,
   triggeredAlertsCount = 0,
   onQuickJumpTicker,
+  isLivePulse = true,
+  onToggleLivePulse,
 }) => {
+
   const [jumpInput, setJumpInput] = useState("");
 
   const handleQuickJump = (e: React.FormEvent) => {
@@ -117,6 +122,28 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
 
       {/* Live System Telemetry Badges */}
       <div className="flex items-center flex-wrap gap-2 text-[11px] font-mono">
+        {/* 2-Second Live Pulse Toggle Button */}
+        {onToggleLivePulse && (
+          <button
+            onClick={onToggleLivePulse}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded border transition-colors ${
+              isLivePulse
+                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
+                : "bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-slate-700"
+            }`}
+            title="Toggle 2-second live terminal pulse simulation"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isLivePulse ? "bg-emerald-400 animate-ping" : "bg-slate-500"
+              }`}
+            />
+            <span className="font-semibold text-[10px]">
+              {isLivePulse ? "LIVE PULSE: ON (2s)" : "LIVE PULSE: PAUSED"}
+            </span>
+          </button>
+        )}
+
         {/* Backend Online / Offline */}
         <div
           className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${
@@ -125,6 +152,7 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
               : "bg-rose-500/10 border-rose-500/30 text-rose-400"
           }`}
         >
+
           <span
             className={`w-2 h-2 rounded-full ${
               isBackendConnected ? "bg-emerald-400 animate-pulse" : "bg-rose-400"

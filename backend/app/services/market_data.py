@@ -263,8 +263,8 @@ class MarketDataService:
             except Exception as e:
                 logger.error(f"Error fetching from Polygon for {ticker}: {e}")
 
-        # 3. Fallback: Stale Cache
-        if cached_entry:
+        # 3. Fallback: Stale Cache (only if not forcing refresh)
+        if cached_entry and not force_refresh:
             try:
                 payload = json.loads(cached_entry.payload_json)
                 bars = [OHLCVBar(**b) for b in payload]

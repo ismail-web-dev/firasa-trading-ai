@@ -12,12 +12,16 @@ ENV/
 node_modules/
 .next/
 out/
+frontend/out/
 build/
 dist/
 .npm
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+firasa-hostinger-public_html.zip
+*.zip
+
 
 # Environment & Secrets
 .env
