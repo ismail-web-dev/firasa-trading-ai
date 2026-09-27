@@ -38,11 +38,26 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
     <header className="border-b border-terminal-border bg-terminal-panel/90 backdrop-blur px-3 xl:px-4 py-2 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-2.5 xl:gap-3.5">
       {/* Brand & Terminal Identifier (Left) */}
       <div className="flex items-center gap-2.5 shrink-0">
-        <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 font-bold text-sm tracking-wider shrink-0">
-          <Terminal className="w-4 h-4 text-sky-400 shrink-0" />
-          <span className="whitespace-nowrap">FIRASA // فراسة</span>
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400 font-bold text-sm tracking-wider shrink-0 shadow-sm">
+          <svg
+            className="w-5 h-5 shrink-0"
+            viewBox="0 0 32 32"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-label="FIRASA Emblem"
+          >
+            <rect x="1" y="1" width="30" height="30" rx="6" fill="#090d16" stroke="#38bdf8" strokeWidth="1.5" />
+            <path d="M10 11 Q 16 6 23 8.5" fill="none" stroke="#38bdf8" strokeWidth="1" strokeLinecap="round" opacity="0.6" strokeDasharray="1.5 1.5" />
+            <line x1="10" y1="7" x2="10" y2="25" stroke="#10b981" strokeWidth="1.2" strokeLinecap="round" />
+            <rect x="8" y="11" width="4" height="10" rx="0.8" fill="#10b981" />
+            <line x1="17" y1="9" x2="17" y2="26" stroke="#f43f5e" strokeWidth="1.2" strokeLinecap="round" />
+            <rect x="15" y="13" width="4" height="8" rx="0.8" fill="#f43f5e" />
+            <path d="M23 4.5 L24.2 7.5 L27.2 8.5 L24.2 9.5 L23 12.5 L21.8 9.5 L18.8 8.5 L21.8 7.5 Z" fill="#38bdf8" />
+            <circle cx="23" cy="8.5" r="1" fill="#ffffff" />
+          </svg>
+          <span className="whitespace-nowrap font-mono">FIRASA // فراسة</span>
         </div>
-        <span className="hidden 2xl:inline-block text-[11px] uppercase tracking-widest text-terminal-muted border-l border-terminal-border pl-2.5 whitespace-nowrap">
+        <span className="hidden 2xl:inline-block text-[11px] uppercase tracking-widest text-terminal-muted border-l border-terminal-border pl-2.5 whitespace-nowrap font-mono">
           AI-POWERED MARKET INTELLIGENCE
         </span>
       </div>
