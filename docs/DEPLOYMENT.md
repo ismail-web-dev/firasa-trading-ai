@@ -93,3 +93,24 @@ For local development and testing, run the root launcher script in PowerShell:
 This starts:
 - **Backend:** `http://localhost:8000/api/v1` (with docs at `http://localhost:8000/docs`)
 - **Frontend:** `http://localhost:3000`
+
+---
+
+## 6. Live Production Verification & Telemetry
+
+Automated smoke testing script: `verify_production.py`
+
+- **Status:** Verified Live in Production
+- **Target URL:** `https://firasa.ismailspace.cloud`
+- **Verified Timestamp:** 2026-09-27T12:56:54Z
+- **Test Suite Results:** 7/7 Checks Passed (100%)
+
+| Check | Endpoint | Status | Latency | Result |
+| :--- | :--- | :--- | :--- | :--- |
+| **Check 1: Frontend Terminal UI** | `/` | 200 | 1568ms | **PASS** (FIRASA branding verified) |
+| **Check 2: Health & Watchlist Seeding** | `/api/v1/health` & `/api/v1/market/watchlist` | 200 / 200 | 1119ms | **PASS** (10 default tickers matched) |
+| **Check 3: Rate Limiter & Cache Guard** | `/api/v1/market/cache-status` | 200 | 1025ms | **PASS** (`limit_per_minute=5`, `cache_ttl=60m`) |
+| **Check 4: Deterministic Indicators (Zero LLM)** | `/api/v1/market/indicators/AAPL` | 200 | 694ms | **PASS** (RSI 14, SMA 20, MACD Hist computed) |
+| **Check 5: Portfolio & Alerts Endpoints** | `/api/v1/portfolio` & `/api/v1/alerts` | 200 / 200 | 860ms | **PASS** (Full JSON schemas verified) |
+| **Check 6: AI Intelligence & Scanner** | `/api/v1/ai/analyze/AAPL` & `/opportunities` | 200 / 200 | 391ms | **PASS** (Bias, confidence, 15-min disclaimer) |
+| **Check 7: Secret Isolation Audit** | All Response Bodies | 200 | N/A | **PASS** (Zero secret leaks) |
