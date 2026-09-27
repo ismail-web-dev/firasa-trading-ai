@@ -15,20 +15,35 @@ import {
 } from "@/types/market";
 
 export function getApiBaseUrl(): string {
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:8000/api/v1";
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1";
+}
+
+function resolveApiUrl(path: string, params?: Record<string, string>): string {
+  const base = getApiBaseUrl();
+  if (base.startsWith("http://") || base.startsWith("https://")) {
+    const url = new URL(`${base}${path}`);
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          url.searchParams.set(k, v);
+        }
+      });
     }
+    return url.toString();
   }
-  return (
-    process.env.NEXT_PUBLIC_API_BASE_URL ||
-    "https://api.firasa.ismailspace.cloud/api/v1"
-  );
+
+  const normalizedBase = base.endsWith("/") ? base.slice(0, -1) : base;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const fullPath = `${normalizedBase}${normalizedPath}`;
+  if (!params || Object.keys(params).length === 0) {
+    return fullPath;
+  }
+  const query = new URLSearchParams(params).toString();
+  return query ? `${fullPath}?${query}` : fullPath;
 }
 
 export async function fetchWatchlist(): Promise<WatchlistItem[]> {
-  const res = await fetch(`${getApiBaseUrl()}/market/watchlist`, {
+  const res = await fetch(resolveApiUrl("/market/watchlist"), {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -41,7 +56,7 @@ export async function addToWatchlist(
   ticker: string,
   company_name?: string
 ): Promise<WatchlistItem> {
-  const res = await fetch(`${getApiBaseUrl()}/market/watchlist`, {
+  const res = await fetch(resolveApiUrl("/market/watchlist"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -58,7 +73,7 @@ export async function addToWatchlist(
 
 export async function removeFromWatchlist(ticker: string): Promise<void> {
   const res = await fetch(
-    `${getApiBaseUrl()}/market/watchlist/${encodeURIComponent(ticker.trim().toUpperCase())}`,
+    resolveApiUrl(`/market/watchlist/${encodeURIComponent(ticker.trim().toUpperCase())}`),
     {
       method: "DELETE",
     }
@@ -72,11 +87,8 @@ export async function removeFromWatchlist(ticker: string): Promise<void> {
 }
 
 export async function fetchQuotes(tickers?: string[]): Promise<TickerQuote[]> {
-  const url = new URL(`${getApiBaseUrl()}/market/quotes`);
-  if (tickers && tickers.length > 0) {
-    url.searchParams.set("tickers", tickers.join(","));
-  }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const params = tickers && tickers.length > 0 ? { tickers: tickers.join(",") } : undefined;
+  const res = await fetch(resolveApiUrl("/market/quotes", params), { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`Failed to fetch quotes: ${res.statusText}`);
   }
@@ -85,7 +97,7 @@ export async function fetchQuotes(tickers?: string[]): Promise<TickerQuote[]> {
 
 export async function fetchQuote(ticker: string): Promise<TickerQuote> {
   const res = await fetch(
-    `${getApiBaseUrl()}/market/quote/${encodeURIComponent(ticker.trim().toUpperCase())}`,
+    resolveApiUrl(`/market/quote/${encodeURIComponent(ticker.trim().toUpperCase())}`),
     {
       cache: "no-store",
     }
@@ -104,14 +116,14 @@ export async function fetchBars(
   days: number = 90,
   forceRefresh: boolean = false
 ): Promise<MarketBarsResponse> {
-  const url = new URL(
-    `${getApiBaseUrl()}/market/bars/${encodeURIComponent(ticker.trim().toUpperCase())}`
-  );
-  url.searchParams.set("days", days.toString());
+  const params: Record<string, string> = { days: days.toString() };
   if (forceRefresh) {
-    url.searchParams.set("force_refresh", "true");
+    params.force_refresh = "true";
   }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const res = await fetch(
+    resolveApiUrl(`/market/bars/${encodeURIComponent(ticker.trim().toUpperCase())}`, params),
+    { cache: "no-store" }
+  );
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(
@@ -122,7 +134,7 @@ export async function fetchBars(
 }
 
 export async function fetchCacheStatus(): Promise<CacheStatus> {
-  const res = await fetch(`${getApiBaseUrl()}/market/cache-status`, {
+  const res = await fetch(resolveApiUrl("/market/cache-status"), {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -136,14 +148,14 @@ export async function fetchIndicators(
   days: number = 120,
   forceRefresh: boolean = false
 ): Promise<TickerIndicatorsResponse> {
-  const url = new URL(
-    `${getApiBaseUrl()}/market/indicators/${encodeURIComponent(ticker.trim().toUpperCase())}`
-  );
-  url.searchParams.set("days", days.toString());
+  const params: Record<string, string> = { days: days.toString() };
   if (forceRefresh) {
-    url.searchParams.set("force_refresh", "true");
+    params.force_refresh = "true";
   }
-  const res = await fetch(url.toString(), { cache: "no-store" });
+  const res = await fetch(
+    resolveApiUrl(`/market/indicators/${encodeURIComponent(ticker.trim().toUpperCase())}`, params),
+    { cache: "no-store" }
+  );
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(
@@ -154,7 +166,7 @@ export async function fetchIndicators(
 }
 
 export async function fetchPortfolio(): Promise<PortfolioSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/portfolio`, {
+  const res = await fetch(resolveApiUrl("/portfolio"), {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -166,14 +178,14 @@ export async function fetchPortfolio(): Promise<PortfolioSummaryResponse> {
 export async function savePortfolioHolding(
   payload: HoldingCreateUpdate
 ): Promise<PortfolioSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/portfolio`, {
+  const res = await fetch(resolveApiUrl("/portfolio"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ticker: payload.ticker.trim().toUpperCase(),
       shares: Number(payload.shares),
       avg_cost_basis: Number(payload.avg_cost_basis),
-      notes: payload.notes || undefined,
+      notes: payload.notes || null,
     }),
   });
   if (!res.ok) {
@@ -189,14 +201,14 @@ export async function updatePortfolioHolding(
   id: number,
   payload: HoldingCreateUpdate
 ): Promise<PortfolioSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/portfolio/${id}`, {
+  const res = await fetch(resolveApiUrl(`/portfolio/${id}`), {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ticker: payload.ticker.trim().toUpperCase(),
       shares: Number(payload.shares),
       avg_cost_basis: Number(payload.avg_cost_basis),
-      notes: payload.notes || undefined,
+      notes: payload.notes || null,
     }),
   });
   if (!res.ok) {
@@ -211,7 +223,7 @@ export async function updatePortfolioHolding(
 export async function deletePortfolioHolding(
   id: number
 ): Promise<PortfolioSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/portfolio/${id}`, {
+  const res = await fetch(resolveApiUrl(`/portfolio/${id}`), {
     method: "DELETE",
   });
   if (!res.ok) {
@@ -224,7 +236,7 @@ export async function deletePortfolioHolding(
 }
 
 export async function fetchAlerts(): Promise<AlertsSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/alerts`, {
+  const res = await fetch(resolveApiUrl("/alerts"), {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -236,7 +248,7 @@ export async function fetchAlerts(): Promise<AlertsSummaryResponse> {
 export async function createAlert(
   payload: AlertCreate
 ): Promise<AlertsSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/alerts`, {
+  const res = await fetch(resolveApiUrl("/alerts"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -255,7 +267,7 @@ export async function createAlert(
 }
 
 export async function evaluateAlerts(): Promise<AlertsSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/alerts/evaluate`, {
+  const res = await fetch(resolveApiUrl("/alerts/evaluate"), {
     method: "POST",
   });
   if (!res.ok) {
@@ -268,7 +280,7 @@ export async function updateAlert(
   id: number,
   payload: { is_active?: boolean; reset_trigger?: boolean }
 ): Promise<AlertsSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/alerts/${id}`, {
+  const res = await fetch(resolveApiUrl(`/alerts/${id}`), {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -283,7 +295,7 @@ export async function updateAlert(
 }
 
 export async function deleteAlert(id: number): Promise<AlertsSummaryResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/alerts/${id}`, {
+  const res = await fetch(resolveApiUrl(`/alerts/${id}`), {
     method: "DELETE",
   });
   if (!res.ok) {
@@ -302,7 +314,7 @@ export async function fetchMarketAnalysis(
   ticker: string
 ): Promise<MarketAnalysisResponse> {
   const res = await fetch(
-    `${getApiBaseUrl()}/ai/analyze/${encodeURIComponent(ticker.trim().toUpperCase())}`,
+    resolveApiUrl(`/ai/analyze/${encodeURIComponent(ticker.trim().toUpperCase())}`),
     {
       cache: "no-store",
     }
@@ -317,7 +329,7 @@ export async function fetchMarketAnalysis(
 }
 
 export async function fetchPortfolioRiskAudit(): Promise<PortfolioRiskAuditResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/ai/portfolio-audit`, {
+  const res = await fetch(resolveApiUrl("/ai/portfolio-audit"), {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -330,7 +342,7 @@ export async function fetchPortfolioRiskAudit(): Promise<PortfolioRiskAuditRespo
 }
 
 export async function fetchOpportunityScan(): Promise<OpportunityScanResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/ai/opportunities`, {
+  const res = await fetch(resolveApiUrl("/ai/opportunities"), {
     cache: "no-store",
   });
   if (!res.ok) {
