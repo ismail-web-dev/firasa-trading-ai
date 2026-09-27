@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node -e \"const fs=require('fs'),path=require('path');function fix(d){try{fs.chmodSync(d,0o755);for(const f of fs.readdirSync(d)){const p=path.join(d,f),s=fs.statSync(p);if(s.isDirectory())fix(p);else fs.chmodSync(p,0o644);}}catch(e){}}fix('src');fix('public');\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
